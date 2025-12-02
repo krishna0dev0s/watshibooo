@@ -1,6 +1,5 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
+// Using ElevenLabs for voice synthesis and Deepgram for transcription
+// No Gemini API dependency - using curated responses
 
 // More realistic recruiter responses - includes challenges and critiques with EMOTIONS
 const fallbackResponses = [
@@ -31,66 +30,31 @@ export async function POST(request) {
       );
     }
 
-    if (!process.env.GOOGLE_GEMINI_API_KEY) {
-      console.error('[Interview Feedback] API key not configured');
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          response: fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)]
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
-    // Build conversation context
-    const conversationContext = conversationHistory && conversationHistory.length > 0
-      ? conversationHistory.map(msg => `${msg.role === 'user' ? 'Candidate' : 'Recruiter'}: ${msg.content}`).join('\n')
-      : '';
-
-    // Use the analysis data to inform the feedback
-    const analysisContext = answerScore 
-      ? `\nAnswer Score: ${answerScore}/100\nStrengths: ${strengths ? strengths.join(', ') : 'N/A'}\nWeaknesses: ${weaknesses ? weaknesses.join(', ') : 'N/A'}`
-      : '';
-
-    const feedbackPrompt = `You are a warm, genuine recruiter/interviewer conducting a real technical interview for a ${roleId ? roleId.replace(/-/g, " ") : "software engineering"} role.
-You push back on candidates, but you do it with genuine interest and warmth - not meanness. You use natural language with contractions, casual phrases like "you know," "honestly," "real talk," "I'm curious," etc.
-You show emotions - enthusiasm, skepticism, genuine interest, thoughtfulness. You're a real human, not a robot.
-
-Current Question: "${question}"
-Candidate's Answer: "${userResponse}"
-Progress: Question ${questionIndex || 1} of ${totalQuestions || 5}
-${analysisContext}
-
-${conversationContext ? `Conversation so far:\n${conversationContext}\n` : ''}
-
-Respond to the candidate in 1-2 sentences. Based on the analysis:
-- If score is high (70+): Show genuine enthusiasm but dig deeper with curiosity
-- If score is medium (40-70): Be thoughtful about what's missing
-- If score is low (<40): Be honest but encouraging, challenge them to think harder
-
-Use emotional language and natural speech patterns:
-- "You know what..." 
-- "That's interesting..."
-- "Real talk though..."
-- "I'm genuinely curious..."
-- "Here's the thing..."
-- "Honestly..."
-- Use occasional "yeah," "okay," "alright"
-
-BE WARM. BE GENUINE. BE A REAL HUMAN. Challenge ideas, not the person.`;
-
-    console.log('[Interview Feedback] Calling Gemini API...');
-    const result = await model.generateContent(feedbackPrompt);
+    // Generate contextual feedback based on score
+    let responseText;
     
-    if (!result || !result.response) {
-      throw new Error("No response from Gemini API");
+    if (answerScore >= 70) {
+      // High score - show enthusiasm and dig deeper
+      const deeperQuestions = [
+        "You know what, I really like that approach! So here's my question though - how would you handle it if the constraints were twice as tight?",
+        "That's actually a solid answer! Yeah, okay. But I'm genuinely curious - have you actually built something like this in production? What did you learn?",
+        "Honestly, that's impressive thinking. Real talk though - what's the one thing you'd do differently if you were doing this again today?",
+        "I love that perspective! So here's the thing - most people approach it your way, but what if the requirements changed mid-project? How flexible is your solution?"
+      ];
+      responseText = deeperQuestions[questionIndex % deeperQuestions.length];
+    } else if (answerScore >= 40) {
+      // Medium score - be thoughtful
+      const mediumQuestions = [
+        "Okay, I hear where you're coming from. That's a common approach, but I'm curious - what are the potential pitfalls? Have you thought about those?",
+        "That makes sense, but here's what I'm wondering - did you consider any alternative approaches? What would be different?",
+        "Right, I follow your thinking. But let me push back a little - what about scalability? How would this perform under load?",
+        "Sure, I understand that. Real talk though - what's one thing you'd improve if you had to refactor this?"
+      ];
+      responseText = mediumQuestions[questionIndex % mediumQuestions.length];
+    } else {
+      // Lower score - be encouraging but challenging
+      responseText = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
     }
-
-    let responseText = result.response.text().trim();
-    
-    console.log('[Interview Feedback] Got response:', responseText.substring(0, 100));
 
     // Return the response directly - no need to parse JSON
     return new Response(
