@@ -48,6 +48,8 @@ export default function RoadmapGenerator({ onRoadmapGenerated }) {
 
     setLoading(true);
     try {
+      console.log('[Roadmap Generator] Generating roadmap with:', { selectedDomain, skills, currentLevel, timelineMonths });
+      
       const result = await generateRoadmapContent({
         domain: selectedDomain,
         skills: skills,
@@ -55,31 +57,33 @@ export default function RoadmapGenerator({ onRoadmapGenerated }) {
         months: timelineMonths,
       });
 
+      console.log('[Roadmap Generator] API Response:', result);
+
       if (!result.success) {
         toast.error(result.error || "Failed to generate roadmap");
         return;
       }
 
-      setRoadmap({
+      if (!result.data || !result.data.phases) {
+        toast.error("Invalid roadmap structure returned from API");
+        return;
+      }
+
+      const roadmapObj = {
         domain: selectedDomain,
         skills: skills,
         level: currentLevel,
         months: timelineMonths,
         data: result.data,
         generatedAt: new Date().toLocaleDateString(),
-      });
+      };
+
+      console.log('[Roadmap Generator] Setting roadmap:', roadmapObj);
+      setRoadmap(roadmapObj);
       
       // Call parent callback to update roadmap in page state
       if (onRoadmapGenerated) {
-        onRoadmapGenerated({
-          domain: selectedDomain,
-          skills: skills,
-          level: currentLevel,
-          months: timelineMonths,
-          phases: result.data?.phases || [],
-          data: result.data,
-          generatedAt: new Date().toLocaleDateString(),
-        });
+        onRoadmapGenerated(roadmapObj);
       }
       
       setShowPreview(true);

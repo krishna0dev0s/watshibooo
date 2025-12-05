@@ -31,7 +31,7 @@ export default function RoadmapPage() {
         </Link>
 
         {roadmapData ? (
-          <EnhancedRoadmapTracker initialRoadmap={roadmapData} />
+          <EnhancedRoadmapTracker roadmap={roadmapData} />
         ) : (
           <RoadmapGenerator onRoadmapGenerated={handleRoadmapGenerated} />
         )}
