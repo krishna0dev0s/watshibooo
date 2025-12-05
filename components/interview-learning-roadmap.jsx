@@ -14,6 +14,7 @@ export function InterviewLearningRoadmap({ role = 'Software Engineer', company, 
   const [loadingVideos, setLoadingVideos] = useState(false);
   const [completedTopics, setCompletedTopics] = useState({});
   const [error, setError] = useState(null);
+  const [mounted, setMounted] = useState(false);
   const [expandedPhases, setExpandedPhases] = useState({
     foundation: true,
     intermediate: true,
@@ -21,10 +22,27 @@ export function InterviewLearningRoadmap({ role = 'Software Engineer', company, 
     expert: false
   });
 
+  // Load progress from localStorage on mount
+  useEffect(() => {
+    const storageKey = `roadmap-progress-${role}-${level}`;
+    const savedProgress = localStorage.getItem(storageKey);
+    if (savedProgress) {
+      try {
+        const { completed, selectedId } = JSON.parse(savedProgress);
+        setCompletedTopics(completed || {});
+      } catch (e) {
+        console.warn('[Component] Failed to load saved progress');
+      }
+    }
+    setMounted(true);
+  }, [role, level]);
+
   // Fetch learning topics
   useEffect(() => {
-    fetchRoadmap();
-  }, [role, level]);
+    if (mounted) {
+      fetchRoadmap();
+    }
+  }, [role, level, mounted]);
 
   const fetchRoadmap = async () => {
     try {
@@ -110,10 +128,19 @@ export function InterviewLearningRoadmap({ role = 'Software Engineer', company, 
   };
 
   const toggleComplete = (topicId) => {
-    setCompletedTopics(prev => ({
-      ...prev,
-      [topicId]: !prev[topicId]
-    }));
+    setCompletedTopics(prev => {
+      const newCompleted = { ...prev, [topicId]: !prev[topicId] };
+      // Save to localStorage
+      if (typeof window !== 'undefined') {
+        const storageKey = `roadmap-progress-${role}-${level}`;
+        localStorage.setItem(storageKey, JSON.stringify({
+          completed: newCompleted,
+          selectedId: selectedTopic?.id,
+          timestamp: new Date().toISOString()
+        }));
+      }
+      return newCompleted;
+    });
   };
 
   if (loadingRoadmap) {
@@ -173,17 +200,55 @@ export function InterviewLearningRoadmap({ role = 'Software Engineer', company, 
           { key: 'intermediate', label: 'Intermediate', color: 'purple' },
           { key: 'advanced', label: 'Advanced', color: 'orange' },
           { key: 'expert', label: 'Expert', color: 'green' }
-        ].map(phase => (
-          <Card key={phase.key} className={`border-${phase.color}-200`}>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-2xl font-bold">{phaseTopics[phase.key]?.length || 0}</p>
-                <p className="text-xs text-gray-600">{phase.label} Topics</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        ].map(phase => {
+          const phaseComplete = phaseTopics[phase.key]?.filter(t => completedTopics[t.id]).length || 0;
+          const phaseTotal = phaseTopics[phase.key]?.length || 0;
+          const phasePercent = phaseTotal > 0 ? Math.round((phaseComplete / phaseTotal) * 100) : 0;
+          
+          return (
+            <Card key={phase.key} className={`border-${phase.color}-200 bg-gradient-to-br from-white to-${phase.color}-50`}>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-gray-800">{phaseComplete}/{phaseTotal}</p>
+                  <p className="text-xs text-gray-600 mb-3">{phase.label}</p>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className={`bg-${phase.color}-500 h-2 rounded-full transition-all`}
+                      style={{ width: `${phasePercent}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">{phasePercent}%</p>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
+
+      {/* Overall Progress Bar */}
+      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+        <CardHeader>
+          <CardTitle className="text-lg">Overall Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div
+                className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 h-3 rounded-full transition-all"
+                style={{ width: `${roadmap?.topics?.length ? Math.round((Object.keys(completedTopics).filter(t => completedTopics[t]).length / roadmap.topics.length) * 100) : 0}%` }}
+              ></div>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">
+                {Object.keys(completedTopics).filter(t => completedTopics[t]).length} of {roadmap?.topics?.length || 0} topics completed
+              </span>
+              <span className="font-semibold text-gray-800">
+                {roadmap?.topics?.length ? Math.round((Object.keys(completedTopics).filter(t => completedTopics[t]).length / roadmap.topics.length) * 100) : 0}%
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Roadmap Sidebar */}
@@ -260,10 +325,7 @@ export function InterviewLearningRoadmap({ role = 'Software Engineer', company, 
                     <Button
                       variant={completedTopics[selectedTopic.id] ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => setCompletedTopics(prev => ({
-                        ...prev,
-                        [selectedTopic.id]: !prev[selectedTopic.id]
-                      }))}
+                      onClick={() => toggleComplete(selectedTopic.id)}
                     >
                       {completedTopics[selectedTopic.id] ? '✓ Completed' : 'Mark Complete'}
                     </Button>
