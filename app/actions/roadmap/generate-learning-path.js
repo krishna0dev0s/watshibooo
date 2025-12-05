@@ -4,11 +4,11 @@ export async function generateLearningPathFromRoadmap(roadmapData) {
   try {
     console.log('[Generate Learning Path] Processing roadmap:', {
       domain: roadmapData.domain,
-      phases: roadmapData.data.phases.length,
+      phases: roadmapData.phases?.length,
       skills: roadmapData.skills
     });
 
-    if (!roadmapData.data.phases || roadmapData.data.phases.length === 0) {
+    if (!roadmapData.phases || roadmapData.phases.length === 0) {
       return {
         success: false,
         error: "Invalid roadmap structure"
@@ -18,12 +18,12 @@ export async function generateLearningPathFromRoadmap(roadmapData) {
     // Build learning path with phases and topics
     const learningPath = {
       title: `${roadmapData.domain} Learning Path`,
-      description: roadmapData.data.overview || `Complete learning path for ${roadmapData.domain}`,
+      description: roadmapData.overview || `Complete learning path for ${roadmapData.domain}`,
       domain: roadmapData.domain,
       skills: roadmapData.skills,
       level: roadmapData.level,
       months: roadmapData.months,
-      phases: roadmapData.data.phases.map((phase, index) => ({
+      phases: roadmapData.phases.map((phase, index) => ({
         id: `phase-${index}`,
         phaseNumber: phase.phaseNumber || index + 1,
         name: phase.name,
@@ -39,7 +39,7 @@ export async function generateLearningPathFromRoadmap(roadmapData) {
       })),
       roadmapId: `roadmap-${Date.now()}`,
       createdAt: new Date().toISOString(),
-      totalTopics: roadmapData.data.phases.reduce((sum, phase) => sum + (phase.topics?.length || 0), 0)
+      totalTopics: roadmapData.phases.reduce((sum, phase) => sum + (phase.topics?.length || 0), 0)
     };
 
     console.log('[Generate Learning Path] Generated learning path with', learningPath.phases.length, 'phases');
