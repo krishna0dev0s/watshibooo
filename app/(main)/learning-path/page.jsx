@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useSearchParams } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   Play,
@@ -25,7 +25,6 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
 export default function LearningPathPage() {
-  const searchParams = useSearchParams();
   const [topic, setTopic] = useState("");
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -40,30 +39,36 @@ export default function LearningPathPage() {
 
   // Check for roadmap data from sessionStorage (when coming from roadmap)
   useEffect(() => {
-    if (searchParams.get('from') === 'roadmap') {
-      const pathData = sessionStorage.getItem('learningPathData');
-      if (pathData) {
-        try {
-          const roadmapPath = JSON.parse(pathData);
-          setLearningPath(roadmapPath);
-          console.log('[Learning Path] Loaded roadmap learning path:', roadmapPath.title);
-          
-          // Auto-load first topic's videos
-          if (roadmapPath.phases && roadmapPath.phases[0] && roadmapPath.phases[0].topics && roadmapPath.phases[0].topics[0]) {
-            const firstTopic = roadmapPath.phases[0].topics[0];
-            setTopic(firstTopic.title);
-            setCurrentPhaseIndex(0);
-            setCurrentTopicIndex(0);
+    try {
+      const fromRoadmap = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('from') === 'roadmap';
+      
+      if (fromRoadmap && typeof window !== 'undefined') {
+        const pathData = window.sessionStorage?.getItem('learningPathData');
+        if (pathData) {
+          try {
+            const roadmapPath = JSON.parse(pathData);
+            setLearningPath(roadmapPath);
+            console.log('[Learning Path] Loaded roadmap learning path:', roadmapPath.title);
+            
+            // Auto-load first topic's videos
+            if (roadmapPath.phases && roadmapPath.phases[0] && roadmapPath.phases[0].topics && roadmapPath.phases[0].topics[0]) {
+              const firstTopic = roadmapPath.phases[0].topics[0];
+              setTopic(firstTopic.title);
+              setCurrentPhaseIndex(0);
+              setCurrentTopicIndex(0);
+            }
+            
+            // Clear session storage after loading
+            window.sessionStorage?.removeItem('learningPathData');
+          } catch (e) {
+            console.error('[Learning Path] Failed to load roadmap data:', e);
           }
-          
-          // Clear session storage after loading
-          sessionStorage.removeItem('learningPathData');
-        } catch (e) {
-          console.error('[Learning Path] Failed to load roadmap data:', e);
         }
       }
+    } catch (error) {
+      console.error('[Learning Path] Error checking roadmap data:', error);
     }
-  }, [searchParams]);
+  }, []);
 
   // Load progress from localStorage
   useEffect(() => {
