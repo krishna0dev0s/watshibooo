@@ -74,7 +74,13 @@ export default function RoadmapGenerator({ onRoadmapGenerated }) {
         skills: skills,
         level: currentLevel,
         months: timelineMonths,
-        data: result.data,
+        phases: result.data.phases,
+        overview: result.data.overview,
+        prerequisites: result.data.prerequisites,
+        tools: result.data.tools,
+        timeCommitment: result.data.timeCommitment,
+        capstoneProjects: result.data.capstoneProjects,
+        tips: result.data.tips,
         generatedAt: new Date().toLocaleDateString(),
       };
 

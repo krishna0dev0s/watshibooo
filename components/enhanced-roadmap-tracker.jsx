@@ -98,14 +98,14 @@ export default function EnhancedRoadmapTracker({ roadmap, completedPhases = [], 
     const percentage = totalPhases > 0 ? (completed / totalPhases) * 100 : 0;
 
     // Calculate time metrics
-    const monthsPerPhase = (activeRoadmap.months || 12) / totalPhases;
+    const monthsPerPhase = totalPhases > 0 ? (activeRoadmap.months || 12) / totalPhases : 0;
     const monthsCompleted = completed * monthsPerPhase;
-    const monthsRemaining = Math.ceil(activeRoadmap.months - monthsCompleted);
+    const monthsRemaining = totalPhases > 0 ? Math.ceil((activeRoadmap.months || 12) - monthsCompleted) : 0;
     const estimatedCompletion = new Date();
     estimatedCompletion.setMonth(estimatedCompletion.getMonth() + monthsRemaining);
 
     // Calculate learning velocity (phases per month)
-    const velocity = totalPhases > 0 ? (completed / (activeRoadmap.months / 12)) : 0;
+    const velocity = totalPhases > 0 ? (completed / ((activeRoadmap.months || 12) / 12)) : 0;
 
     return {
       percentage: Math.round(percentage),
