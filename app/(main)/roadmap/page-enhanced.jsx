@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Play, RotateCcw, Loader2 } from "lucide-react";
+import { ArrowLeft, Play, Pause, SkipForward, SkipBack, Volume2, Maximize, BookOpen, Award, Zap, Users, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import RoadmapGenerator from "./_components/roadmap-generator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +21,7 @@ const RoadmapCoursePlayer = dynamic(
   { ssr: false }
 );
 
-export default function RoadmapPage() {
+export default function EnhancedRoadmapPage() {
   const [roadmapData, setRoadmapData] = useState(null);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [videoQueue, setVideoQueue] = useState([]);
@@ -41,6 +41,7 @@ export default function RoadmapPage() {
 
     setLoading(true);
     try {
+      // Fetch videos for all selected topics
       const allVideos = [];
       
       for (const topic of selectedTopics) {
@@ -130,7 +131,7 @@ export default function RoadmapPage() {
               </Button>
             </div>
 
-            {/* Start Course Button */}
+            {/* Start Course Button - Fixed */}
             {selectedTopics.length > 0 && (
               <Card className="border-blue-500/50 bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
                 <CardContent className="pt-6 flex items-center justify-between">
@@ -143,17 +144,8 @@ export default function RoadmapPage() {
                     disabled={loading}
                     className="gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
                   >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Loading...
-                      </>
-                    ) : (
-                      <>
-                        <Play className="h-4 w-4" />
-                        Start Course
-                      </>
-                    )}
+                    <Play className="h-4 w-4" />
+                    {loading ? "Loading..." : "Start Course"}
                   </Button>
                 </CardContent>
               </Card>
