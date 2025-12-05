@@ -322,21 +322,26 @@ export default function IntegratedLearningPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      {phase.topics?.map((topic, topicIdx) => (
-                        <Button
-                          key={topicIdx}
-                          variant="outline"
-                          className="w-full justify-start text-left h-auto py-3 px-4"
-                          onClick={() => selectTopicFromRoadmap(topic, phaseIdx, topicIdx)}
-                        >
-                          <BookOpen className="h-4 w-4 mr-3 flex-shrink-0" />
-                          <div className="flex-1">
-                            <div className="font-medium">{topic}</div>
-                            <div className="text-xs text-gray-400">Click to load videos</div>
-                          </div>
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      ))}
+                      {phase.topics?.map((topic, topicIdx) => {
+                        // Handle both string topics and object topics
+                        const topicTitle = typeof topic === 'string' ? topic : (topic?.title || 'Unknown Topic');
+                        
+                        return (
+                          <Button
+                            key={topicIdx}
+                            variant="outline"
+                            className="w-full justify-start text-left h-auto py-3 px-4"
+                            onClick={() => selectTopicFromRoadmap(topicTitle, phaseIdx, topicIdx)}
+                          >
+                            <BookOpen className="h-4 w-4 mr-3 flex-shrink-0" />
+                            <div className="flex-1">
+                              <div className="font-medium">{topicTitle}</div>
+                              <div className="text-xs text-gray-400">Click to load videos</div>
+                            </div>
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        );
+                      })}
                     </CardContent>
                   </Card>
                 ))}
