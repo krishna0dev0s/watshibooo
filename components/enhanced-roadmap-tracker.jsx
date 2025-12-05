@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Card,
@@ -22,12 +23,15 @@ import {
   Target,
   Zap,
   BookOpen,
+  Play,
 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function EnhancedRoadmapTracker({ roadmap, completedPhases = [], onPhaseComplete }) {
+  const router = useRouter();
   const [view, setView] = useState("timeline");
   const [expandedPhase, setExpandedPhase] = useState(null);
+  const [startingLearning, setStartingLearning] = useState(false);
 
   // Provide default roadmap if not passed
   const defaultRoadmap = {
@@ -155,6 +159,36 @@ export default function EnhancedRoadmapTracker({ roadmap, completedPhases = [], 
     toast.success("Progress exported!");
   };
 
+  // Start learning path from roadmap
+  const startLearningPath = async () => {
+    try {
+      setStartingLearning(true);
+      console.log('[Roadmap Tracker] Starting learning path from roadmap');
+
+      const { generateLearningPathFromRoadmap } = await import('@/app/actions/roadmap/generate-learning-path');
+      
+      const result = await generateLearningPathFromRoadmap(activeRoadmap);
+      
+      if (!result.success) {
+        toast.error(result.error || "Failed to generate learning path");
+        return;
+      }
+
+      // Save learning path to sessionStorage for transfer
+      sessionStorage.setItem('learningPathData', JSON.stringify(result.data));
+      
+      toast.success("Learning path created! Redirecting...");
+      
+      // Redirect to learning path page
+      router.push('/learning-path?from=roadmap');
+    } catch (error) {
+      console.error('[Roadmap Tracker] Error:', error);
+      toast.error("Failed to start learning path");
+    } finally {
+      setStartingLearning(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -171,6 +205,14 @@ export default function EnhancedRoadmapTracker({ roadmap, completedPhases = [], 
             </p>
           </div>
           <div className="flex gap-2">
+            <Button 
+              onClick={startLearningPath}
+              disabled={startingLearning}
+              className="gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+            >
+              <Play className="h-4 w-4" />
+              {startingLearning ? "Starting..." : "Start Learning Path"}
+            </Button>
             <Button variant="outline" onClick={exportProgress} className="gap-2">
               <Download className="h-4 w-4" />
               Export

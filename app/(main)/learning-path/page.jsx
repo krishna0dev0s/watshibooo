@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSearchParams } from "react";
 import {
   Search,
   Play,
@@ -16,6 +16,7 @@ import {
   Users,
   RotateCcw,
   ArrowLeft,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,14 +25,45 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
 export default function LearningPathPage() {
+  const searchParams = useSearchParams();
   const [topic, setTopic] = useState("");
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [learningPath, setLearningPath] = useState(null);
+  const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
+  const [currentTopicIndex, setCurrentTopicIndex] = useState(0);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [completedVideos, setCompletedVideos] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [courseStarted, setCourseStarted] = useState(false);
+
+  // Check for roadmap data from sessionStorage (when coming from roadmap)
+  useEffect(() => {
+    if (searchParams.get('from') === 'roadmap') {
+      const pathData = sessionStorage.getItem('learningPathData');
+      if (pathData) {
+        try {
+          const roadmapPath = JSON.parse(pathData);
+          setLearningPath(roadmapPath);
+          console.log('[Learning Path] Loaded roadmap learning path:', roadmapPath.title);
+          
+          // Auto-load first topic's videos
+          if (roadmapPath.phases && roadmapPath.phases[0] && roadmapPath.phases[0].topics && roadmapPath.phases[0].topics[0]) {
+            const firstTopic = roadmapPath.phases[0].topics[0];
+            setTopic(firstTopic.title);
+            setCurrentPhaseIndex(0);
+            setCurrentTopicIndex(0);
+          }
+          
+          // Clear session storage after loading
+          sessionStorage.removeItem('learningPathData');
+        } catch (e) {
+          console.error('[Learning Path] Failed to load roadmap data:', e);
+        }
+      }
+    }
+  }, [searchParams]);
 
   // Load progress from localStorage
   useEffect(() => {
