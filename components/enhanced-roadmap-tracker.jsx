@@ -163,7 +163,7 @@ export default function EnhancedRoadmapTracker({ roadmap, completedPhases = [], 
   const startLearningPath = async () => {
     try {
       setStartingLearning(true);
-      console.log('[Roadmap Tracker] Starting learning path from roadmap');
+      console.log('[Roadmap Tracker] Starting integrated learning from roadmap');
 
       const { generateLearningPathFromRoadmap } = await import('@/app/actions/roadmap/generate-learning-path');
       
@@ -177,13 +177,13 @@ export default function EnhancedRoadmapTracker({ roadmap, completedPhases = [], 
       // Save learning path to sessionStorage for transfer
       sessionStorage.setItem('learningPathData', JSON.stringify(result.data));
       
-      toast.success("Learning path created! Redirecting...");
+      toast.success("Learning hub opened! Redirecting...");
       
-      // Redirect to learning path page
-      router.push('/learning-path?from=roadmap');
+      // Redirect to integrated learning page
+      router.push('/integrated-learning');
     } catch (error) {
       console.error('[Roadmap Tracker] Error:', error);
-      toast.error("Failed to start learning path");
+      toast.error("Failed to start learning");
     } finally {
       setStartingLearning(false);
     }
