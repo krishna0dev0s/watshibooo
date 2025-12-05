@@ -6,6 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from '@clerk/themes';
 import { Toaster } from "@/components/ui/sonner";
 import PixelBlastBg from "@/components/PixelBlastBg";
+import { ClerkTimeoutHandler } from "@/components/clerk-timeout-handler";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,6 +24,10 @@ export default function RootLayout({ children }) {
       appearance={{
         baseTheme: dark,
       }}
+      afterSignOutUrl="/"
+      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      signInFallbackRedirectUrl="/"
+      signUpFallbackRedirectUrl="/"
     >
       <html lang="en" suppressHydrationWarning>
         <body className={`${inter.className}`}>
@@ -32,6 +37,7 @@ export default function RootLayout({ children }) {
             enableSystem
             disableTransitionOnChange
           >
+            <ClerkTimeoutHandler />
             <PixelBlastBg />
             <div className="relative z-0">
               <div className="fixed top-0 left-0 right-0 z-50 bg-background/30 backdrop-blur-[6px] shadow-lg border-b border-white/10">
