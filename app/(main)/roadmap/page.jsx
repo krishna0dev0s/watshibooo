@@ -42,23 +42,49 @@ export default function RoadmapPage() {
     setLoading(true);
     try {
       const allVideos = [];
+      const seenTopics = new Set(); // Track topics to avoid duplicates
+      let queueIndex = 0;
       
-      for (const topic of selectedTopics) {
-        const response = await fetch("/api/youtube-videos", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ topic: topic.title }),
-        });
+      // Process topics in roadmap order to maintain learning sequence
+      for (const phase of roadmapData.phases || []) {
+        for (const phaseTopicStr of phase.topics || []) {
+          // Extract topic title (handle both string and object formats)
+          const topicTitle = typeof phaseTopicStr === 'string' ? phaseTopicStr : (phaseTopicStr?.title || '');
+          
+          // Skip if topic not selected or already processed
+          const isSelected = selectedTopics.some(t => t.title === topicTitle);
+          if (!isSelected || seenTopics.has(topicTitle)) {
+            continue;
+          }
+          
+          seenTopics.add(topicTitle);
+          console.log(`[Course Builder] Loading videos for: ${topicTitle}`);
+          
+          try {
+            const response = await fetch("/api/youtube-videos", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ topic: topicTitle }),
+            });
 
-        if (response.ok) {
-          const data = await response.json();
-          const videos = data.videos?.slice(0, 5).map((v, idx) => ({
-            ...v,
-            topicTitle: topic.title,
-            topicId: topic.id,
-            queueIndex: allVideos.length + idx,
-          })) || [];
-          allVideos.push(...videos);
+            if (response.ok) {
+              const data = await response.json();
+              const videos = data.videos?.slice(0, 4).map((v) => ({
+                ...v,
+                topicTitle,
+                topicId: topicTitle,
+                queueIndex: queueIndex++,
+              })) || [];
+              
+              if (videos.length > 0) {
+                allVideos.push(...videos);
+                console.log(`[Course Builder] Added ${videos.length} videos for ${topicTitle}`);
+              }
+            }
+          } catch (error) {
+            console.error(`[Course Builder] Error fetching videos for ${topicTitle}:`, error);
+            // Continue with other topics even if one fails
+          }
         }
       }
 
@@ -69,7 +95,8 @@ export default function RoadmapPage() {
 
       setVideoQueue(allVideos);
       setPlayerOpen(true);
-      toast.success(`Loaded ${allVideos.length} videos for your course!`);
+      console.log(`[Course Builder] Course created with ${allVideos.length} videos from ${seenTopics.size} unique topics`);
+      toast.success(`Course ready! ${allVideos.length} videos from ${seenTopics.size} topics`);
     } catch (error) {
       console.error('Error building course:', error);
       toast.error("Failed to build course");
